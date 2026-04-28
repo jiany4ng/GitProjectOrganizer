@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Git Project Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@gitgraph/js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo"><span class="logo-symbol">⎇</span><span class="logo-text">GitManager</span></div>
+  </div>
+  <div class="sidebar-section">
+    <div id="root-dir-display" class="root-dir-display">No folder selected</div>
+    <button id="btn-pick-dir" class="btn-secondary btn-full">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Change Folder
+    </button>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav">
+    <button class="nav-item active" data-view="dashboard" id="nav-dashboard">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <div class="nav-section-header" id="nav-repos-header" style="display:none">Repositories</div>
+    <div id="nav-repos-list"></div>
+    <div class="nav-section-header">Quick Links</div>
+    <div id="nav-quicklinks-trigger">
+      <button class="nav-item nav-add-link" id="btn-add-quicklink">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Link
+      </button>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button id="btn-refresh" class="btn-secondary btn-full">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
+  </div>
+</aside>
+
+<main id="main-content">
+  <header id="top-bar">
+    <div class="search-wrapper">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon-svg"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="search-input" placeholder="Search repositories..." autocomplete="off" />
+      <button id="search-clear" class="search-clear hidden"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <span id="status-text" class="status-text">Ready</span>
+  </header>
+
+  <!-- Dashboard -->
+  <div id="dashboard-view" class="dashboard-view hidden">
+    <div class="dashboard-inner">
+
+      <!-- Clocks -->
+      <section class="dash-section">
+        <h2 class="dash-title">World Time</h2>
+        <div class="clocks-grid">
+          <div class="clock-card"><div class="clock-city">Spain</div><div class="clock-time" id="clock-Spain">--:--:--</div><div class="clock-date" id="clock-date-Spain"></div></div>
+          <div class="clock-card"><div class="clock-city">United Kingdom</div><div class="clock-time" id="clock-UK">--:--:--</div><div class="clock-date" id="clock-date-UK"></div></div>
+          <div class="clock-card"><div class="clock-city">US East</div><div class="clock-time" id="clock-US East">--:--:--</div><div class="clock-date" id="clock-date-US East"></div></div>
+          <div class="clock-card"><div class="clock-city">Australia</div><div class="clock-time" id="clock-Australia">--:--:--</div><div class="clock-date" id="clock-date-Australia"></div></div>
+        </div>
+      </section>
+
+      <section class="dash-section">
+        <div class="contrib-header">
+          <h2 class="dash-title">Contributions</h2>
+          <div class="contrib-folder-tabs" id="contrib-folder-tabs">
+            <button class="period-tab active" data-folder="All">All</button>
+          </div>
+          <span id="contrib-total" class="contrib-total-badge">Loading...</span>
+        </div>
+        <div class="contrib-grid-wrap">
+          <div id="contrib-grid" class="contrib-grid"></div>
+          <div class="contrib-legend">
+            <span class="contrib-legend-label">Less</span>
+            <span class="contrib-cell" data-level="0"></span>
+            <span class="contrib-cell" data-level="1"></span>
+            <span class="contrib-cell" data-level="2"></span>
+            <span class="contrib-cell" data-level="3"></span>
+            <span class="contrib-cell" data-level="4"></span>
+            <span class="contrib-legend-label">More</span>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Recent Repos -->
+      <section class="dash-section">
+        <h2 class="dash-title">Recent Repositories</h2>
+        <div id="recent-repos-list" class="recent-repos-list"><p class="dash-empty">No recently accessed repositories.</p></div>
+      </section>
+
+      <!-- Quick Links Cards -->
+      <section class="dash-section">
+        <div class="contrib-header">
+          <h2 class="dash-title">Quick Links</h2>
+          <button class="btn-ghost btn-sm" id="btn-add-quicklink2">+ Add Link</button>
+        </div>
+        <div id="quicklinks-cards" class="quicklinks-cards"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Welcome -->
+  <div id="welcome-state" class="welcome-state">
+    <div class="welcome-icon">⎇</div>
+    <h1>Git Project Manager</h1>
+    <p>Select a root directory to discover and manage your repositories.</p>
+    <button id="btn-pick-dir-welcome" class="btn-primary btn-lg">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Select Root Folder
+    </button>
+  </div>
+
+  <div id="loading-state" class="loading-state hidden"><div class="spinner"></div><p>Scanning repositories...</p></div>
+  <div id="projects-grid" class="projects-grid hidden"></div>
+  <div id="empty-state" class="empty-state hidden"><p>No repositories match your search.</p></div>
+</main>
+
+<!-- Detail Panel -->
+<div id="detail-overlay" class="detail-overlay hidden"></div>
+<aside id="detail-panel" class="detail-panel hidden">
+  <div class="detail-header">
+    <div class="detail-header-info">
+      <h2 id="detail-repo-name" class="detail-repo-name">Repository</h2>
+      <p id="detail-repo-path" class="detail-repo-path"></p>
+    </div>
+    <div class="detail-header-actions">
+      <button id="detail-terminal" class="btn-icon-label" title="Open Terminal">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Terminal
+      </button>
+      <button id="detail-github" class="btn-icon-label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12"/></svg>
+        GitHub
+      </button>
+      <button id="detail-vscode" class="btn-icon-label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>
+        VS Code
+      </button>
+      <button id="detail-close" class="btn-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+  </div>
+  <div class="detail-body">
+    <div class="detail-section">
+      <label class="section-label">Branch</label>
+      <div class="branch-selector-row">
+        <select id="branch-select" class="branch-select"></select>
+        <span id="branch-status-badge" class="branch-status-badge"></span>
+      </div>
+    </div>
+    <div class="detail-section">
+      <label class="section-label">Commit History <span class="section-hint">— click a commit to check it out</span></label>
+      <div id="git-graph-container" class="git-graph-container"><div id="git-graph"></div></div>
+    </div>
+    <div class="detail-section sync-section">
+      <label class="section-label">Super Sync</label>
+      <div class="sync-description">Stage files and push in one click.</div>
+      <div id="modified-files-list" class="modified-files-list"></div>
+      <div class="sync-controls">
+        <div class="sync-input-row">
+          <input type="text" id="commit-message" class="commit-message-input" placeholder="Commit message..." />
+          <button id="btn-select-all" class="btn-ghost btn-sm">Select All</button>
+        </div>
+        <button id="btn-sync" class="btn-primary btn-sync">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span id="sync-btn-label">Sync — Add, Commit, Push</span>
+        </button>
+      </div>
+      <div id="sync-output" class="sync-output hidden"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- Add Quick Link Modal -->
+<div id="quicklink-modal-overlay" class="modal-overlay hidden"></div>
+<div id="quicklink-modal" class="modal hidden">
+  <h3 class="modal-title">Add Quick Link</h3>
+  <div class="modal-body">
+    <label class="modal-label">Name</label><input type="text" id="ql-name" class="modal-input" placeholder="e.g. Notion" />
+    <label class="modal-label">URL</label><input type="text" id="ql-url" class="modal-input" placeholder="https://..." />
+  </div>
+  <div class="modal-footer">
+    <button id="ql-cancel" class="btn-secondary">Cancel</button>
+    <button id="ql-save" class="btn-primary">Add Link</button>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
