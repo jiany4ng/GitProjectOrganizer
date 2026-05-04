@@ -42,6 +42,7 @@ export namespace main {
 	    rootDir: string;
 	    recentProjects: string[];
 	    quickLinks: QuickLink[];
+	    branchColors: Record<string, string>;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
@@ -52,6 +53,7 @@ export namespace main {
 	        this.rootDir = source["rootDir"];
 	        this.recentProjects = source["recentProjects"];
 	        this.quickLinks = this.convertValues(source["quickLinks"], QuickLink);
+	        this.branchColors = source["branchColors"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

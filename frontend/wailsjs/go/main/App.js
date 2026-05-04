@@ -14,12 +14,24 @@ export function CheckoutCommit(arg1, arg2) {
   return window['go']['main']['App']['CheckoutCommit'](arg1, arg2);
 }
 
+export function CreateBranch(arg1, arg2) {
+  return window['go']['main']['App']['CreateBranch'](arg1, arg2);
+}
+
+export function GetBranchColor(arg1, arg2) {
+  return window['go']['main']['App']['GetBranchColor'](arg1, arg2);
+}
+
 export function GetBranches(arg1) {
   return window['go']['main']['App']['GetBranches'](arg1);
 }
 
 export function GetCommitHistory(arg1, arg2) {
   return window['go']['main']['App']['GetCommitHistory'](arg1, arg2);
+}
+
+export function GetCommitTree(arg1, arg2) {
+  return window['go']['main']['App']['GetCommitTree'](arg1, arg2);
 }
 
 export function GetConfig() {
@@ -34,12 +46,24 @@ export function GetCurrentBranch(arg1) {
   return window['go']['main']['App']['GetCurrentBranch'](arg1);
 }
 
+export function GetFileAtCommit(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetFileAtCommit'](arg1, arg2, arg3);
+}
+
+export function GetFileDiffAtCommit(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetFileDiffAtCommit'](arg1, arg2, arg3);
+}
+
 export function GetGitHubURL(arg1) {
   return window['go']['main']['App']['GetGitHubURL'](arg1);
 }
 
 export function GetModifiedFiles(arg1) {
   return window['go']['main']['App']['GetModifiedFiles'](arg1);
+}
+
+export function GetPRURL(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetPRURL'](arg1, arg2, arg3);
 }
 
 export function GetQuickLinks() {
@@ -66,6 +90,10 @@ export function OpenURL(arg1) {
   return window['go']['main']['App']['OpenURL'](arg1);
 }
 
+export function PullRepo(arg1) {
+  return window['go']['main']['App']['PullRepo'](arg1);
+}
+
 export function RemoveQuickLink(arg1) {
   return window['go']['main']['App']['RemoveQuickLink'](arg1);
 }
@@ -80,6 +108,10 @@ export function ScanProjects(arg1) {
 
 export function SelectDirectory() {
   return window['go']['main']['App']['SelectDirectory']();
+}
+
+export function SetBranchColor(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetBranchColor'](arg1, arg2, arg3);
 }
 
 export function SetRootDir(arg1) {

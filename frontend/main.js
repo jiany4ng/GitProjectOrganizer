@@ -1,4 +1,4 @@
-import { ScanProjects, CheckStatus, OpenInVSCode, GetBranches, GetCurrentBranch, SwitchBranch, GetModifiedFiles, GetCommitHistory, SuperSync, SelectDirectory, GetConfig, GetSubfolders, GetRecentProjects, SaveRecentProject, GetQuickLinks, AddQuickLink, UseQuickLink, RemoveQuickLink, GetGitHubURL, OpenURL, CheckoutCommit, GetContributionStats, OpenTerminal } from './wailsjs/go/main/App.js';
+import { ScanProjects, CheckStatus, OpenInVSCode, GetBranches, GetCurrentBranch, SwitchBranch, GetModifiedFiles, GetCommitHistory, SuperSync, SelectDirectory, GetConfig, GetSubfolders, GetRecentProjects, SaveRecentProject, GetQuickLinks, AddQuickLink, UseQuickLink, RemoveQuickLink, GetGitHubURL, OpenURL, CheckoutCommit, GetContributionStats, OpenTerminal, PullRepo, CreateBranch, GetPRURL, SetBranchColor, GetBranchColor } from './wailsjs/go/main/App.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
@@ -61,14 +61,69 @@ async function loadContribGrid(folder) {
   try {
     const stats = await GetContributionStats(folder || 'All');
     badge.textContent = `${stats.total.toLocaleString()} interactions`;
+    
+    const tooltip = $('custom-tooltip');
+    
     stats.days.forEach(day => {
       const cell = document.createElement('span');
       cell.className = 'contrib-cell';
-      cell.dataset.level = contribLevel(day.count);
-      cell.title = `${day.date}: ${day.count} commit${day.count !== 1 ? 's' : ''}`;
+      if (day.count === -1) {
+        cell.style.visibility = 'hidden';
+      } else {
+        cell.dataset.level = contribLevel(day.count);
+        
+        // Add custom tooltip events
+        cell.addEventListener('mouseenter', (e) => {
+          let html = `<div class="custom-tooltip-date">${day.date} &mdash; ${day.count} commit${day.count !== 1 ? 's' : ''}</div>`;
+          if (day.commits && day.commits.length > 0) {
+            const limit = 8;
+            for (let i = 0; i < Math.min(day.commits.length, limit); i++) {
+              const c = day.commits[i];
+              html += `<div class="custom-tooltip-commit">
+                        <span class="custom-tooltip-repo">${esc(c.repo)}</span> 
+                        <span class="custom-tooltip-hash">[${esc(c.hash)}]</span><br>
+                        ${esc(c.message)}
+                       </div>`;
+            }
+            if (day.commits.length > limit) {
+              html += `<div class="custom-tooltip-commit" style="font-style:italic;">...and ${day.commits.length - limit} more</div>`;
+            }
+          } else if (day.count > 0) {
+            html += `<div class="custom-tooltip-commit">Details not available</div>`;
+          }
+          
+          tooltip.innerHTML = html;
+          tooltip.classList.remove('hidden');
+          setTimeout(() => tooltip.classList.add('visible'), 1);
+          
+          // Position tooltip
+          const rect = cell.getBoundingClientRect();
+          let top = rect.top - tooltip.offsetHeight - 10;
+          let left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2);
+          
+          // Constrain to window bounds
+          if (top < 10) top = rect.bottom + 10;
+          if (left < 10) left = 10;
+          if (left + tooltip.offsetWidth > window.innerWidth - 10) {
+            left = window.innerWidth - tooltip.offsetWidth - 10;
+          }
+          
+          tooltip.style.top = `${top}px`;
+          tooltip.style.left = `${left}px`;
+        });
+        
+        cell.addEventListener('mousemove', (e) => {
+          // Could update position on move, but static relative to cell is fine for a grid.
+        });
+        
+        cell.addEventListener('mouseleave', () => {
+          tooltip.classList.remove('visible');
+          tooltip.classList.add('hidden');
+        });
+      }
       grid.appendChild(cell);
     });
-  } catch { badge.textContent = '—'; }
+  } catch(e) { console.error(e); badge.textContent = '—'; }
 }
 
 // --- Top Repos (removed) ---
@@ -192,13 +247,30 @@ function makeCard(p){
   card.className='project-card';
   card.innerHTML=`
     <div class="card-top"><div class="card-name">${esc(p.name)}</div><span class="card-category-badge">${esc(p.category)}</span></div>
-    <div class="card-path" title="${esc(p.path)}">${esc(p.path)}</div>
     <div class="card-footer">
       <div class="card-status ${cls}" id="cs-${CSS.escape(p.path)}"><span class="status-dot ${cached?'':'pulse'}"></span>${label}</div>
-      <button class="btn-vscode" data-path="${esc(p.path)}"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>Code</button>
+      <button class="btn-vscode btn-pull-card" data-path="${esc(p.path)}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Pull</button>
+      <button class="btn-vscode btn-code-card" data-path="${esc(p.path)}"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z"/></svg>Code</button>
     </div>`;
   card.addEventListener('click',e=>{if(!e.target.closest('.btn-vscode'))openDetail(p);});
-  card.querySelector('.btn-vscode').addEventListener('click',async e=>{e.stopPropagation();await OpenInVSCode(p.path);toast(`Opening ${p.name}`,'info',2000);});
+  
+  card.querySelector('.btn-code-card').addEventListener('click',async e=>{
+    e.stopPropagation();
+    await OpenInVSCode(p.path);
+    toast(`Opening ${p.name}`,'info',2000);
+  });
+  
+  card.querySelector('.btn-pull-card').addEventListener('click',async e=>{
+    e.stopPropagation();
+    toast(`Pulling ${p.name}...`,'info',2000);
+    const r=await PullRepo(p.path);
+    if(r.success){
+      toast('Pull successful','success');
+      try{const s=await CheckStatus(p.path);updateCardStatus(p.path,s);}catch{}
+    }else{
+      toast(`Pull failed: ${r.error}`,'error',6000);
+    }
+  });
   return card;
 }
 
@@ -246,7 +318,7 @@ async function buildReposSidebar(rootDir){
 }
 
 // --- Add Quick Link modal ---
-function showAddLinkModal(){$('ql-name').value='';$('ql-url').value='';$('quicklink-modal-overlay').classList.remove('hidden');$('quicklink-modal').classList.remove('hidden');$('ql-name').focus();}
+
 function hideAddLinkModal(){$('quicklink-modal-overlay').classList.add('hidden');$('quicklink-modal').classList.add('hidden');}
 
 // --- Detail Panel ---
@@ -260,6 +332,7 @@ async function openDetail(project){
   $('detail-panel').classList.remove('hidden');
   try{await SaveRecentProject(project.path);}catch{}
   await Promise.all([loadBranches(project),loadModFiles(project),loadGraph(project)]);
+  applyBranchColor(project.path,state.activeBranch);
 }
 function closeDetail(){$('detail-overlay').classList.add('hidden');$('detail-panel').classList.add('hidden');state.selectedProject=null;}
 
@@ -356,11 +429,174 @@ function renderGraph(commits){
 
 async function handleCommitClick(c){
   if(!state.selectedProject)return;
-  const hash=c.hash.slice(0,40);
-  if(!confirm(`Checkout commit ${hash.slice(0,7)}?\nThis will put the repo in detached HEAD state.`))return;
-  const r=await CheckoutCommit(state.selectedProject.path,hash);
-  if(r==='ok'){toast(`Checked out ${hash.slice(0,7)}`,'success',3000);await loadBranches(state.selectedProject);}
-  else toast(r,'error');
+  openDiffModal(c);
+}
+
+// --- Commit Explorer ---
+let explorerCommit = '';
+let explorerFiles = [];
+
+async function openDiffModal(c){
+  explorerCommit = c.hash;
+  const overlay=$('diff-modal-overlay'),modal=$('diff-modal');
+  $('diff-modal-title').textContent=`Commit ${c.hash.slice(0,7)}`;
+  $('diff-modal-meta').textContent=`${c.author||''} · ${c.date||''} · ${c.message||''}`;
+  $('commit-file-list').innerHTML='Loading...';
+  $('diff-content').innerHTML='';
+  $('commit-selected-file').textContent='Select a file';
+  $('btn-commit-copy').classList.add('hidden');
+  $('btn-commit-diff').classList.add('hidden');
+  
+  overlay.classList.remove('hidden');modal.classList.remove('hidden');
+  
+  try{
+    explorerFiles=await window.go.main.App.GetCommitTree(state.selectedProject.path, c.hash);
+    renderCommitFileList();
+  }catch(e){$('commit-file-list').textContent='Error: '+e;}
+  
+  $('diff-checkout-btn').onclick=async()=>{
+    if(!confirm(`Checkout commit ${c.hash.slice(0,7)}?\nThis will put the repo in detached HEAD state.`))return;
+    const r=await window.go.main.App.CheckoutCommit(state.selectedProject.path,c.hash);
+    if(r==='ok'){toast(`Checked out ${c.hash.slice(0,7)}`,'success',3000);closeDiffModal();await loadBranches(state.selectedProject);}
+    else toast(r,'error');
+  };
+}
+
+const extPattern = /\.(py|java|c|cpp|h|hpp|cs|go|rs|rb|php|js|jsx|ts|tsx|html|css|scss|sass|less|json|xml|yaml|yml|toml|ini|env|md|txt|csv|sh|bash|zsh|bat|ps1|sql|vue|svelte|swift|kt|mod|sum)$/i;
+
+function isAllowedFile(path) {
+  const name = path.split('/').pop();
+  if (['makefile', 'dockerfile', '.gitignore', '.env'].includes(name.toLowerCase())) return true;
+  return extPattern.test(name);
+}
+
+function renderCommitFileList() {
+  const list = $('commit-file-list');
+  list.innerHTML = '';
+  
+  const filteredFiles = explorerFiles.filter(isAllowedFile);
+  if (filteredFiles.length === 0) {
+    list.innerHTML = '<div class="dash-empty" style="padding:10px;">No code files in this commit.</div>';
+    return;
+  }
+
+  const root = { name: '', children: {}, isDir: true, path: '' };
+  filteredFiles.forEach(file => {
+    const parts = file.split('/');
+    let current = root;
+    let currPath = '';
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      currPath = currPath ? currPath + '/' + part : part;
+      if (!current.children[part]) {
+        current.children[part] = { name: part, children: {}, isDir: i < parts.length - 1, path: currPath };
+      }
+      current = current.children[part];
+    }
+  });
+
+  function renderTree(node, container, level = 0) {
+    const children = Object.values(node.children).sort((a, b) => {
+      if (a.isDir && !b.isDir) return -1;
+      if (!a.isDir && b.isDir) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    children.forEach(child => {
+      const item = document.createElement('div');
+      item.className = 'tree-item';
+      item.style.paddingLeft = `${level * 14 + 8}px`;
+
+      const icon = document.createElement('span');
+      icon.className = 'tree-icon';
+      icon.innerHTML = child.isDir ? '📁' : '📄';
+
+      const label = document.createElement('span');
+      label.textContent = child.name;
+
+      item.appendChild(icon);
+      item.appendChild(label);
+
+      if (child.isDir) {
+        item.classList.add('tree-dir');
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'tree-children';
+        let isOpen = true;
+        item.onclick = (e) => {
+          e.stopPropagation();
+          isOpen = !isOpen;
+          childrenContainer.style.display = isOpen ? 'block' : 'none';
+          item.classList.toggle('collapsed', !isOpen);
+          icon.innerHTML = isOpen ? '📂' : '📁';
+        };
+        // Set initial icon
+        icon.innerHTML = '📂';
+        container.appendChild(item);
+        container.appendChild(childrenContainer);
+        renderTree(child, childrenContainer, level + 1);
+      } else {
+        item.classList.add('tree-file');
+        item.onclick = (e) => {
+          e.stopPropagation();
+          selectCommitFile(child.path, item);
+        };
+        container.appendChild(item);
+      }
+    });
+  }
+
+  renderTree(root, list, 0);
+}
+
+async function selectCommitFile(file, element) {
+  document.querySelectorAll('.tree-file').forEach(el => el.classList.remove('active'));
+  if (element) element.classList.add('active');
+  
+  $('commit-selected-file').textContent = file;
+  $('diff-content').textContent = 'Loading...';
+  $('btn-commit-copy').classList.remove('hidden');
+  $('btn-commit-diff').classList.remove('hidden');
+  
+  // By default, load raw file content
+  try {
+    const raw = await window.go.main.App.GetFileAtCommit(state.selectedProject.path, explorerCommit, file);
+    $('diff-content').textContent = raw;
+    $('btn-commit-copy').onclick = () => {
+      navigator.clipboard.writeText(raw);
+      toast('Copied to clipboard', 'success', 2000);
+    };
+    $('btn-commit-diff').onclick = async () => {
+      $('diff-content').textContent = 'Loading diff...';
+      try {
+        const diff = await window.go.main.App.GetFileDiffAtCommit(state.selectedProject.path, explorerCommit, file);
+        renderDiffOutput(diff);
+      } catch(e) {
+        $('diff-content').textContent = 'Error: ' + e;
+      }
+    };
+  } catch(e) {
+    $('diff-content').textContent = 'Error: ' + e;
+  }
+}
+
+function closeDiffModal(){
+  $('diff-modal-overlay').classList.add('hidden');
+  $('diff-modal').classList.add('hidden');
+}
+
+function renderDiffOutput(raw){
+  const el=$('diff-content');
+  el.innerHTML='';
+  raw.split('\n').forEach(line=>{
+    const sp=document.createElement('span');
+    sp.textContent=line+'\n';
+    if(line.startsWith('+')&&!line.startsWith('+++'))sp.className='diff-line-add';
+    else if(line.startsWith('-')&&!line.startsWith('---'))sp.className='diff-line-del';
+    else if(line.startsWith('@@'))sp.className='diff-line-hunk';
+    else if(line.startsWith('diff ')||line.startsWith('index ')||line.startsWith('---')||line.startsWith('+++'))sp.className='diff-line-meta';
+    else if(/^\s*(\S+\s*\|)/.test(line))sp.className='diff-line-stat';
+    el.appendChild(sp);
+  });
 }
 
 // --- Super Sync ---
@@ -387,9 +623,72 @@ async function runSync(){
   finally{state.syncing=false;$('sync-btn-label').textContent='Sync — Add, Commit, Push';$('btn-sync').disabled=false;}
 }
 
+// --- Auto-refresh every 5 min ---
+const REFRESH_MS = 5 * 60 * 1000;
+let refreshSecondsLeft = REFRESH_MS / 1000;
+function startAutoRefresh(){
+  const countdown=$('refresh-countdown');
+  setInterval(async()=>{
+    refreshSecondsLeft--;
+    if(refreshSecondsLeft<=0){
+      refreshSecondsLeft=REFRESH_MS/1000;
+      if(state.rootDir){
+        fetchStatusBg();
+      }
+    }
+    const m=Math.floor(refreshSecondsLeft/60),s=refreshSecondsLeft%60;
+    if(countdown)countdown.textContent=`Auto-refresh in ${m}:${String(s).padStart(2,'0')}`;
+  },1000);
+}
+
+// --- New Branch Modal ---
+function showNewBranchModal(){
+  $('new-branch-name').value='';
+  $('new-branch-modal-overlay').classList.remove('hidden');
+  $('new-branch-modal').classList.remove('hidden');
+  setTimeout(()=>$('new-branch-name').focus(),50);
+}
+function hideNewBranchModal(){
+  $('new-branch-modal-overlay').classList.add('hidden');
+  $('new-branch-modal').classList.add('hidden');
+}
+
+// --- PR Modal ---
+async function showPRModal(){
+  if(!state.selectedProject)return;
+  const branches=await GetBranches(state.selectedProject.path);
+  const head=state.activeBranch;
+  $('pr-head').value=head;
+  const sel=$('pr-base');
+  sel.innerHTML=branches.filter(b=>b!==head).map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+  $('pr-modal-overlay').classList.remove('hidden');
+  $('pr-modal').classList.remove('hidden');
+}
+function hidePRModal(){$('pr-modal-overlay').classList.add('hidden');$('pr-modal').classList.add('hidden');}
+
+// --- Branch Color ---
+async function applyBranchColor(repoPath,branch){
+  let color='';
+  try{color=await GetBranchColor(repoPath,branch);}catch{}
+  const picker=$('branch-color-picker');
+  if(picker)picker.value=color||'#7c3aed';
+  const header=$('detail-header');
+  if(header){
+    if(color){
+      // Convert hex to rgba with low opacity for a subtle tint
+      const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
+      header.style.setProperty('--branch-tint',`rgba(${r},${g},${b},0.10)`);
+      header.style.background=`rgba(${r},${g},${b},0.10)`;
+    }else{
+      header.style.background='';
+    }
+  }
+}
+
 // --- Init ---
 async function init(){
   setInterval(updateClocks,1000);
+  startAutoRefresh();
 
   $('nav-dashboard').addEventListener('click',showDashboard);
 
@@ -419,11 +718,65 @@ async function init(){
 
   $('detail-close').addEventListener('click',closeDetail);
   $('detail-overlay').addEventListener('click',closeDetail);
+
+  // Cloud login buttons
+  $('btn-aws').addEventListener('click',()=>OpenURL('https://console.aws.amazon.com'));
+  $('btn-azure').addEventListener('click',()=>OpenURL('https://portal.azure.com'));
+  $('btn-github-login').addEventListener('click',()=>OpenURL('https://github.com/login'));
+
+  // Pull button
+  $('detail-pull').addEventListener('click',async()=>{
+    if(!state.selectedProject)return;
+    toast('Pulling...','info',2000);
+    const r=await PullRepo(state.selectedProject.path);
+    if(r.success){toast('Pull successful','success');await Promise.all([loadModFiles(state.selectedProject),loadGraph(state.selectedProject)]);try{const s=await CheckStatus(state.selectedProject.path);updateCardStatus(state.selectedProject.path,s);updateBranchBadge();}catch{}}
+    else toast(`Pull failed: ${r.error}`,'error',6000);
+  });
+
   $('detail-terminal').addEventListener('click',async()=>{
     if(!state.selectedProject)return;
     const r=await OpenTerminal(state.selectedProject.path);
     if(r==='ok')toast('Terminal opened','info',2000);
     else toast(r,'error');
+  });
+
+  // New branch
+  $('btn-new-branch').addEventListener('click',showNewBranchModal);
+  $('new-branch-cancel').addEventListener('click',hideNewBranchModal);
+  $('new-branch-modal-overlay').addEventListener('click',hideNewBranchModal);
+  $('new-branch-save').addEventListener('click',async()=>{
+    const name=$('new-branch-name').value.trim();
+    if(!name){toast('Enter a branch name','warning');return;}
+    if(!state.selectedProject)return;
+    const r=await CreateBranch(state.selectedProject.path,name);
+    if(r==='ok'){toast(`Branch "${name}" created`,'success');hideNewBranchModal();await loadBranches(state.selectedProject);}
+    else toast(r,'error',6000);
+  });
+  $('new-branch-name').addEventListener('keydown',e=>{if(e.key==='Enter')$('new-branch-save').click();});
+
+  // PR
+  $('btn-pull-request').addEventListener('click',showPRModal);
+  $('pr-cancel').addEventListener('click',hidePRModal);
+  $('pr-modal-overlay').addEventListener('click',hidePRModal);
+  $('pr-open').addEventListener('click',async()=>{
+    if(!state.selectedProject)return;
+    const head=$('pr-head').value,base=$('pr-base').value;
+    const url=await GetPRURL(state.selectedProject.path,head,base);
+    if(url){OpenURL(url);hidePRModal();}
+    else toast('No GitHub remote found','warning');
+  });
+
+  // Diff modal close
+  $('diff-modal-close').addEventListener('click',closeDiffModal);
+  $('diff-modal-overlay').addEventListener('click',closeDiffModal);
+
+  // Branch color picker
+  $('branch-color-picker').addEventListener('change',async e=>{
+    if(!state.selectedProject||!state.activeBranch)return;
+    const color=e.target.value;
+    await SetBranchColor(state.selectedProject.path,state.activeBranch,color);
+    applyBranchColor(state.selectedProject.path,state.activeBranch);
+    toast('Branch color saved','success',2000);
   });
   $('detail-vscode').addEventListener('click',async()=>{if(state.selectedProject){await OpenInVSCode(state.selectedProject.path);toast('Opening VS Code...','info',2000);}});
   $('detail-github').addEventListener('click',async()=>{
@@ -435,7 +788,7 @@ async function init(){
     if(!state.selectedProject)return;
     const b=$('branch-select').value;
     const r=await SwitchBranch(state.selectedProject.path,b);
-    if(r==='ok'){state.activeBranch=b;toast(`Switched to ${b}`,'success',2000);await Promise.all([loadModFiles(state.selectedProject),loadGraph(state.selectedProject)]);}
+    if(r==='ok'){state.activeBranch=b;toast(`Switched to ${b}`,'success',2000);await Promise.all([loadModFiles(state.selectedProject),loadGraph(state.selectedProject)]);applyBranchColor(state.selectedProject.path,b);}
     else{toast(r,'error');$('branch-select').value=state.activeBranch;}
   });
   $('btn-select-all').addEventListener('click',()=>{

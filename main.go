@@ -16,14 +16,14 @@ func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:             "Git Project Manager",
-		Width:             1300,
-		Height:            820,
-		MinWidth:          900,
-		MinHeight:         600,
-		DisableResize:     false,
-		Fullscreen:        false,
-		WindowStartState:  options.Normal,
+		Title:            "Git Project Manager",
+		Width:            1300,
+		Height:           820,
+		MinWidth:         900,
+		MinHeight:        600,
+		DisableResize:    false,
+		Fullscreen:       false,
+		WindowStartState: options.Normal,
 		BackgroundColour: &options.RGBA{R: 13, G: 17, B: 23, A: 255},
 		AssetServer: &assetserver.Options{
 			Assets: assets,

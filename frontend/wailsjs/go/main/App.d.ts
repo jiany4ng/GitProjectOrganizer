@@ -8,9 +8,15 @@ export function CheckStatus(arg1:string):Promise<main.ProjectStatus>;
 
 export function CheckoutCommit(arg1:string,arg2:string):Promise<string>;
 
+export function CreateBranch(arg1:string,arg2:string):Promise<string>;
+
+export function GetBranchColor(arg1:string,arg2:string):Promise<string>;
+
 export function GetBranches(arg1:string):Promise<Array<string>>;
 
 export function GetCommitHistory(arg1:string,arg2:string):Promise<Array<main.Commit>>;
+
+export function GetCommitTree(arg1:string,arg2:string):Promise<Array<string>>;
 
 export function GetConfig():Promise<main.Config>;
 
@@ -18,9 +24,15 @@ export function GetContributionStats(arg1:string):Promise<main.ContributionStats
 
 export function GetCurrentBranch(arg1:string):Promise<string>;
 
+export function GetFileAtCommit(arg1:string,arg2:string,arg3:string):Promise<string>;
+
+export function GetFileDiffAtCommit(arg1:string,arg2:string,arg3:string):Promise<string>;
+
 export function GetGitHubURL(arg1:string):Promise<string>;
 
 export function GetModifiedFiles(arg1:string):Promise<Array<main.FileStatus>>;
+
+export function GetPRURL(arg1:string,arg2:string,arg3:string):Promise<string>;
 
 export function GetQuickLinks():Promise<Array<main.QuickLink>>;
 
@@ -34,6 +46,8 @@ export function OpenTerminal(arg1:string):Promise<string>;
 
 export function OpenURL(arg1:string):Promise<string>;
 
+export function PullRepo(arg1:string):Promise<main.SyncResult>;
+
 export function RemoveQuickLink(arg1:string):Promise<Array<main.QuickLink>>;
 
 export function SaveRecentProject(arg1:string):Promise<void>;
@@ -41,6 +55,8 @@ export function SaveRecentProject(arg1:string):Promise<void>;
 export function ScanProjects(arg1:string):Promise<Array<main.Project>>;
 
 export function SelectDirectory():Promise<string>;
+
+export function SetBranchColor(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function SetRootDir(arg1:string):Promise<void>;
 
