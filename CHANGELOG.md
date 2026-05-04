@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-05-04
+
+### Added
+- **UI**: Display active branch name directly on project cards in the dashboard.
+- **UI**: Visual branch color accents on dashboard cards (border + gradient + glow).
+- **Backend**: Project-specific branch color persistence (stored as `repoPath:branch`).
+
+### Fixed
+- **Git**: Fixed critical pathspec bug ("pp.go") by preserving leading whitespace in `git status` output.
+- **Go**: Resolved unused import error in `git.go`.
+- **UI**: Improved real-time UI synchronization when updating branch colors from the detail panel.
+
+### Changed
+- **Architecture**: Modularized codebase moved to `app/` directory for better organization.
+- **UI**: Strengthened branch color visuals with thicker borders and subtle glow effects.
+
 ## [1.1.0] - 2026-05-04
 
 ### Added

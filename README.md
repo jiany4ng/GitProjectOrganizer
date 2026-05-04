@@ -10,6 +10,9 @@ Built with **Go + Wails v2** (backend) and **Vanilla HTML/CSS/JS** (frontend).
 
 - **Dashboard** with world clocks and GitHub-style contribution heatmap.
 - **Hierarchical Commit Explorer** — browse files in a tree structure with smart code filtering.
+- **Active Branch Visibility** — see the current branch name directly on each repository card.
+- **Customizable Branch Colors** — assign colors to specific branches (per-project) to highlight priorities.
+- **Enhanced Dashboard Cards** — visual accents (borders, gradients, and glows) based on branch colors.
 - **Repository Browser** — auto-discovers Git repos while skipping heavy dependency folders (`node_modules`, `vendor`).
 - **One-Click Sync** — stage, commit, and push in a single workflow.
 - **Quick Pull** — update your repositories directly from the dashboard cards.
