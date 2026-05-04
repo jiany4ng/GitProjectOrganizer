@@ -8,17 +8,37 @@ Built with **Go + Wails v2** (backend) and **Vanilla HTML/CSS/JS** (frontend).
 
 ## Features
 
-- **Dashboard** with world clocks (Spain, UK, US, Australia)
-- **GitHub-style contribution heatmap** filterable by folder
-- **Repository browser** — auto-discovers all `.git` repos under a root directory
-- **Sidebar** navigation built from your actual subfolder structure
-- **Commit history** visualization (gitgraph.js)
-- **Branch switcher** and **commit checkout**
-- **Super Sync** — stage files, write message, push in one click
-- **Open in VS Code** and **Open Terminal** at any repo path
-- **Open in GitHub** — auto-detects remote URL
-- **Quick Links** cards with usage-frequency sorting
-- **Recent repositories** tracking
+- **Dashboard** with world clocks and GitHub-style contribution heatmap.
+- **Hierarchical Commit Explorer** — browse files in a tree structure with smart code filtering.
+- **Repository Browser** — auto-discovers Git repos while skipping heavy dependency folders (`node_modules`, `vendor`).
+- **One-Click Sync** — stage, commit, and push in a single workflow.
+- **Quick Pull** — update your repositories directly from the dashboard cards.
+- **Draggable UI** — custom window dragging support for a native desktop feel.
+- **Deep Integration** — open any repo in **VS Code**, **Terminal**, or **GitHub** instantly.
+- **Quick Links** — manage frequently used development bookmarks.
+
+---
+
+## Project Structure
+
+```
+GitProjectOrganizer/
+├── app.go              # Main application logic and Wails lifecycle hooks
+├── main.go             # Entry point and window configuration
+├── models.go           # Data structures and configuration definitions
+├── scanner.go          # Project discovery and recursive directory scanning
+├── git_ops.go          # Core Git operations and history retrieval
+├── git_extended.go     # Advanced features: Pull, Branching, and Commit Tree
+├── git.go              # Low-level Git command execution helper
+├── config.go           # Configuration persistence and management
+├── utils.go            # General utility functions
+├── wails.json          # Wails build configuration
+└── frontend/
+    ├── index.html      # Main UI shell (Restructured for better UX)
+    ├── style.css       # Design system and custom component styles
+    ├── main.js         # Frontend state and UI orchestration
+    └── wailsjs/        # Auto-generated Wails JS bindings
+```
 
 ---
 
