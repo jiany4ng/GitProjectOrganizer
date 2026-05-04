@@ -151,6 +151,8 @@ export namespace main {
 	    }
 	}
 	export class ProjectStatus {
+	    branch: string;
+	    branchColor: string;
 	    behind: number;
 	    ahead: number;
 	    clean: boolean;
@@ -163,6 +165,8 @@ export namespace main {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.branch = source["branch"];
+	        this.branchColor = source["branchColor"];
 	        this.behind = source["behind"];
 	        this.ahead = source["ahead"];
 	        this.clean = source["clean"];

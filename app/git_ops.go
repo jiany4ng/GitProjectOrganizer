@@ -13,11 +13,16 @@ func (a *App) CheckStatus(path string) ProjectStatus {
 	fetchCmd := exec.Command("git", "fetch", "--quiet")
 	fetchCmd.Dir = path
 	_ = fetchCmd.Run()
+	
+	branch := a.GetCurrentBranch(path)
+	color := a.GetBranchColor(path, branch)
+	
 	out, err := runGit(path, "status", "-sb")
 	if err != nil {
-		return ProjectStatus{HasError: true, Error: err.Error()}
+		return ProjectStatus{HasError: true, Error: err.Error(), Branch: branch, BranchColor: color}
 	}
-	s := ProjectStatus{Clean: true}
+	
+	s := ProjectStatus{Clean: true, Branch: branch, BranchColor: color}
 	lines := strings.Split(out, "\n")
 	if len(lines) > 0 {
 		if strings.Contains(lines[0], "ahead") {

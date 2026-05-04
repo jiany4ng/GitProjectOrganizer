@@ -7,11 +7,13 @@ type Project struct {
 }
 
 type ProjectStatus struct {
-	Behind   int    `json:"behind"`
-	Ahead    int    `json:"ahead"`
-	Clean    bool   `json:"clean"`
-	HasError bool   `json:"hasError"`
-	Error    string `json:"error"`
+	Branch      string `json:"branch"`
+	BranchColor string `json:"branchColor"`
+	Behind      int    `json:"behind"`
+	Ahead       int    `json:"ahead"`
+	Clean       bool   `json:"clean"`
+	HasError    bool   `json:"hasError"`
+	Error       string `json:"error"`
 }
 
 type FileStatus struct {

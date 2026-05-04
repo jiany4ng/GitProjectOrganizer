@@ -245,8 +245,26 @@ function makeCard(p){
   const{cls,label}=buildStatusHtml(cached);
   const card=document.createElement('div');
   card.className='project-card';
+  card.dataset.path = p.path;
+  
+  if (cached && cached.branchColor) {
+    const color = cached.branchColor;
+    const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
+    card.style.setProperty('--card-accent', color);
+    card.style.setProperty('--card-accent-alpha', `rgba(${r},${g},${b},0.12)`);
+    card.style.setProperty('--card-accent-glow', `rgba(${r},${g},${b},0.15)`);
+    card.classList.add('has-accent');
+  }
+
+  const branchName = cached ? cached.branch : '';
   card.innerHTML=`
-    <div class="card-top"><div class="card-name">${esc(p.name)}</div><span class="card-category-badge">${esc(p.category)}</span></div>
+    <div class="card-top">
+      <div style="flex:1; overflow:hidden;">
+        <div class="card-name">${esc(p.name)}</div>
+        <div class="card-branch" id="cb-${CSS.escape(p.path)}">${esc(branchName)}</div>
+      </div>
+      <span class="card-category-badge">${esc(p.category)}</span>
+    </div>
     <div class="card-footer">
       <div class="card-status ${cls}" id="cs-${CSS.escape(p.path)}"><span class="status-dot ${cached?'':'pulse'}"></span>${label}</div>
       <button class="btn-vscode btn-pull-card" data-path="${esc(p.path)}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Pull</button>
@@ -276,7 +294,27 @@ function makeCard(p){
 
 function updateCardStatus(path,s){
   state.statusCache.set(path,s);
+  const cards = document.querySelectorAll('.project-card');
+  const card = Array.from(cards).find(c => c.dataset.path === path);
   const el=$(`cs-${CSS.escape(path)}`);
+  const branchEl = $(`cb-${CSS.escape(path)}`);
+  
+  if (branchEl) branchEl.textContent = s.branch || '';
+
+  if (card && s.branchColor) {
+    const color = s.branchColor;
+    const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
+    card.style.setProperty('--card-accent', color);
+    card.style.setProperty('--card-accent-alpha', `rgba(${r},${g},${b},0.12)`);
+    card.style.setProperty('--card-accent-glow', `rgba(${r},${g},${b},0.15)`);
+    card.classList.add('has-accent');
+  } else if (card) {
+    card.style.removeProperty('--card-accent');
+    card.style.removeProperty('--card-accent-alpha');
+    card.style.removeProperty('--card-accent-glow');
+    card.classList.remove('has-accent');
+  }
+
   if(!el)return;
   const{cls,label}=buildStatusHtml(s);
   el.className=`card-status ${cls}`;
@@ -675,12 +713,12 @@ async function applyBranchColor(repoPath,branch){
   const header=$('detail-header');
   if(header){
     if(color){
-      // Convert hex to rgba with low opacity for a subtle tint
       const r=parseInt(color.slice(1,3),16),g=parseInt(color.slice(3,5),16),b=parseInt(color.slice(5,7),16);
-      header.style.setProperty('--branch-tint',`rgba(${r},${g},${b},0.10)`);
-      header.style.background=`rgba(${r},${g},${b},0.10)`;
+      header.style.background=`linear-gradient(to bottom, rgba(${r},${g},${b},0.15), var(--bg-surface))`;
+      header.style.borderBottom=`2px solid ${color}`;
     }else{
       header.style.background='';
+      header.style.borderBottom='';
     }
   }
 }
@@ -776,6 +814,10 @@ async function init(){
     const color=e.target.value;
     await SetBranchColor(state.selectedProject.path,state.activeBranch,color);
     applyBranchColor(state.selectedProject.path,state.activeBranch);
+    try {
+      const s = await CheckStatus(state.selectedProject.path);
+      updateCardStatus(state.selectedProject.path, s);
+    } catch {}
     toast('Branch color saved','success',2000);
   });
   $('detail-vscode').addEventListener('click',async()=>{if(state.selectedProject){await OpenInVSCode(state.selectedProject.path);toast('Opening VS Code...','info',2000);}});
